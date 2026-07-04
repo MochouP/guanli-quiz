@@ -29,7 +29,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
 .filter-bar select,.filter-bar button{padding:8px 12px;border-radius:8px;border:2px solid var(--border);font-size:13px;background:#fff;color:var(--text);cursor:pointer}
 .filter-bar select{flex:1;min-width:80px}
 .filter-bar button{background:var(--primary);color:#fff;border-color:var(--primary);font-weight:600}
-.quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.quick-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}
 .qa-btn{background:var(--card);border-radius:var(--radius);padding:16px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.06);cursor:pointer;border:none;font-size:14px;font-weight:600;color:var(--text);transition:.2s}
 .qa-btn:active{transform:scale(.97);background:var(--primary-light)}
 .qa-btn .icon{font-size:24px;display:block;margin-bottom:6px}
@@ -101,6 +101,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
 .fav-item .meta{font-size:12px;color:var(--text2);margin-top:4px}
 .timer-bar{height:3px;background:var(--border);border-radius:2px;margin-bottom:8px;overflow:hidden}
 .timer-bar .fill{height:100%;transition:width 1s linear}
+/* 随机练习弹窗 */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal-box{background:#fff;border-radius:16px;padding:24px;width:85%;max-width:340px;box-shadow:0 4px 20px rgba(0,0,0,.15)}
+.modal-box h3{margin:0 0 12px;font-size:17px;text-align:center}
+.modal-box p{font-size:13px;color:#666;margin:0 0 16px;text-align:center}
+.count-options{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:16px}
+.count-opt{width:60px;height:44px;border-radius:10px;border:2px solid #e0e0e0;background:#fff;font-size:15px;font-weight:600;cursor:pointer;transition:.2s;text-align:center}
+.count-opt.selected{border-color:var(--primary);background:var(--primary-light);color:var(--primary)}
+.count-opt:active{transform:scale(.95)}
+.modal-actions{display:flex;gap:10px}
+.modal-actions button{flex:1;padding:10px;border-radius:10px;border:none;font-size:14px;font-weight:600;cursor:pointer}
+.modal-actions .cancel{background:#f0f0f0;color:#666}
+.modal-actions .confirm{background:var(--primary);color:#fff}
 @media(max-width:400px){.q-text{font-size:14px}.option{font-size:13px;padding:8px 10px}}
 </style>
 </head>
@@ -131,6 +145,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
     </div>
     <div class="quick-actions">
       <button class="qa-btn" onclick="startPractice()"><span class="icon">🎲</span>刷题模式</button>
+      <button class="qa-btn" onclick="showRandomModal()"><span class="icon">🔀</span>随机练习</button>
       <button class="qa-btn" onclick="startExam()"><span class="icon">⏱️</span>考试模式</button>
       <button class="qa-btn" onclick="showWrong()"><span class="icon">📕</span>错题重练</button>
       <button class="qa-btn" onclick="showFavorites()"><span class="icon">⭐</span>收藏题目</button>
@@ -177,6 +192,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
       <button onclick="clearAllProgress()" style="width:100%;padding:12px;border-radius:10px;border:2px solid var(--danger);background:#fff;color:var(--danger);font-size:14px;font-weight:600;cursor:pointer">🗑️ 清除所有进度</button>
     </div>
     <div style="margin-top:20px;text-align:center;font-size:12px;color:var(--text2);line-height:1.8" id="versionDisplay"></div>
+  </div>
+
+    <!-- 随机练习弹窗 -->
+  <div class="modal-overlay" id="randomModal">
+    <div class="modal-box">
+      <h3>🎲 随机练习</h3>
+      <p>选择本次练习的题目数量</p>
+      <div class="count-options" id="countOptions">
+        <button class="count-opt" data-count="5">5</button>
+        <button class="count-opt" data-count="10">10</button>
+        <button class="count-opt selected" data-count="15">15</button>
+        <button class="count-opt" data-count="20">20</button>
+        <button class="count-opt" data-count="25">25</button>
+        <button class="count-opt" data-count="30">30</button>
+        <button class="count-opt" data-count="35">35</button>
+        <button class="count-opt" data-count="40">40</button>
+      </div>
+      <div class="modal-actions">
+        <button class="cancel" onclick="closeRandomModal()">取消</button>
+        <button class="confirm" onclick="startRandomPractice()">开始练习</button>
+      </div>
+    </div>
   </div>
 
   <div class="toast" id="toast"></div>
@@ -694,6 +731,49 @@ function showToast(msg) {
   t.classList.add("show");
   setTimeout(function() { t.classList.remove("show"); }, 2000);
 }
+
+
+// Random Practice Modal
+function showRandomModal() {
+  // Filter check
+  var questions = getFilteredQuestions();
+  if (questions.length === 0) { showToast("没有符合条件的题目"); return; }
+  document.getElementById("randomModal").classList.add("show");
+}
+
+function closeRandomModal() {
+  document.getElementById("randomModal").classList.remove("show");
+}
+
+function startRandomPractice() {
+  var selected = document.querySelector(".count-opt.selected");
+  var count = parseInt(selected ? selected.getAttribute("data-count") : 15);
+  closeRandomModal();
+  
+  var questions = getFilteredQuestions();
+  if (questions.length === 0) { showToast("没有符合条件的题目"); return; }
+  
+  // Shuffle and pick count questions
+  var shuffled = questions.slice();
+  shuffleArray(shuffled);
+  var toUse = shuffled.slice(0, Math.min(count, shuffled.length));
+  
+  state.currentQuestions = toUse;
+  state.currentIndex = 0;
+  state.mode = "practice";
+  enterPractice();
+}
+
+// Count option selection
+document.addEventListener("DOMContentLoaded", function() {
+  var opts = document.querySelectorAll(".count-opt");
+  opts.forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      opts.forEach(function(b) { b.classList.remove("selected"); });
+      this.classList.add("selected");
+    });
+  });
+});
 
 // Init on load
 document.addEventListener("DOMContentLoaded", init);
