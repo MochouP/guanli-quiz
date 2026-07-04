@@ -403,7 +403,7 @@ function renderQuestion() {
 
   var prevAns = state.answers[q.id];
 
-  var feedbackHtml = "";
+  var feedbackHtml = '<div class="feedback" id="feedbackBox"></div>';
 
   document.getElementById("questionArea").innerHTML =
     '<div class="q-card">' +
