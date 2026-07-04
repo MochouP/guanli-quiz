@@ -427,13 +427,12 @@ function renderQuestion() {
     "<button class='btn-outline' onclick='nextQuestion()' " + nextDisabled + ">下一题 →</button>" +
     "</div></div>";
 
-  // Apply previous selections
+  // Apply previous selections - pre-select options but don't show解析
   state.isAnswered = false;
   state.selectedAnswers = [];
   if (prevAns) {
-    state.isAnswered = true;
     state.selectedAnswers = prevAns.slice();
-    applyAnswerState(q);
+    applyAnswerStatePreselect(q);
   }
 }
 
@@ -479,7 +478,6 @@ function submitAnswer() {
 
   saveToStorage();
   applyAnswerState(q);
-  if (state.showAnswer) renderQuestion();
   updateStats();
   if (state.mode === "exam") autoNext();
 }
@@ -499,13 +497,11 @@ function applyAnswerState(q) {
       o.classList.add("wrong");
     }
 
-    // In exam mode, also show which was selected
     if (ans.indexOf(i) >= 0) {
       o.classList.add(q.ans.indexOf(i) >= 0 ? "correct" : "wrong");
     }
   });
 
-  // Show feedback
   var fb = document.querySelector(".feedback");
   if (fb && state.showAnswer) {
     fb.classList.add("show");
@@ -515,6 +511,17 @@ function applyAnswerState(q) {
 
   document.getElementById("submitBtn").textContent = "已提交";
   document.getElementById("submitBtn").disabled = true;
+}
+
+function applyAnswerStatePreselect(q) {
+  var opts = document.querySelectorAll("#optionsContainer .option");
+  var ans = state.selectedAnswers;
+
+  opts.forEach(function(o, i) {
+    if (ans.indexOf(i) >= 0) {
+      o.classList.add("selected");
+    }
+  });
 }
 
 function autoNext() {
