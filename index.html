@@ -404,12 +404,6 @@ function renderQuestion() {
   var prevAns = state.answers[q.id];
 
   var feedbackHtml = "";
-  if (prevAns && state.showAnswer) {
-    var corr = isCorrect(q, prevAns);
-    var fc = corr ? "correct" : "wrong";
-    var txt = corr ? "✅ 回答正确！" : "❌ 回答错误";
-    feedbackHtml = '<div class="feedback show ' + fc + '">' + txt + "<br><strong>解析：</strong>" + escHtml(q.exp || "无解析") + "</div>";
-  }
 
   document.getElementById("questionArea").innerHTML =
     '<div class="q-card">' +
